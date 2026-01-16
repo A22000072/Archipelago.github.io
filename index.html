@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistem Absensi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-5">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-5 text-center">Dashboard Kehadiran Karyawan</h1>
+        
+        <div id="employeeList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p class="text-center">Memuat data karyawan...</p>
+        </div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 id="modalName" class="text-xl font-bold mb-4"></h2>
+            <select id="statusSelect" class="w-full border p-2 mb-4 rounded">
+                <option value="Hadir">Hadir</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Idle">Idle (Tersedia)</option>
+                <option value="Izin">Izin</option>
+            </select>
+            
+            <label class="block mb-2 text-sm font-medium">Ambil Foto:</label>
+            <input type="file" id="photoInput" accept="image/*" capture="camera" class="mb-4">
+            
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded">Batal</button>
+                <button id="btnSubmit" onclick="submitAbsen()" class="bg-blue-600 text-white px-4 py-2 rounded">Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwqVSHdIiau9WLbrdeRO2o7UeH6O5iahN6nSzdYFL7ij7xjcpPEYfBdd5LZGq6eufJJPw/exec';
+        let selectedUser = "";
+
+        // 1. Ambil Data Karyawan dari Sheets
+        async function loadEmployees() {
+            const res = await fetch(scriptURL);
+            const data = await res.json();
+            const container = document.getElementById('employeeList');
+            container.innerHTML = '';
+
+            data.forEach(emp => {
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-lg">${emp[1]}</h3>
+                            <p class="text-gray-500 text-sm">${emp[2]}</p>
+                            <span class="text-xs px-2 py-1 rounded ${emp[3] === 'Hadir' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${emp[3]}</span>
+                        </div>
+                        <button onclick="openModal('${emp[1]}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Update</button>
+                    </div>
+                `;
+            });
+        }
+
+        function openModal(name) {
+            selectedUser = name;
+            document.getElementById('modalName').innerText = "Update: " + name;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // 2. Fungsi Konversi Foto & Kirim Data
+        async function submitAbsen() {
+            const status = document.getElementById('statusSelect').value;
+            const fileInput = document.getElementById('photoInput');
+            const btn = document.getElementById('btnSubmit');
+            
+            let base64Photo = "";
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                base64Photo = await toBase64(file);
+            }
+
+            btn.innerText = "Mengirim...";
+            btn.disabled = true;
+
+            const payload = {
+                action: "updateStatus",
+                nama: selectedUser,
+                status: status,
+                foto: base64Photo
+            };
+
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                alert('Berhasil Update!');
+                closeModal();
+                loadEmployees();
+            })
+            .finally(() => {
+                btn.innerText = "Kirim";
+                btn.disabled = false;
+            });
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        loadEmployees();
+    </script>
+</body>
+</html>
