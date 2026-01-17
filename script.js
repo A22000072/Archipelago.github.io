@@ -4,25 +4,52 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbymc3-DjFQrbfY3BcJT1n
 let selectedUser = '';
 
 async function loadEmployees() {
-  const res = await fetch(scriptURL);
-  const data = await res.json();
   const container = document.getElementById('employeeList');
-  container.innerHTML = '';
+  
+  try {
+    // Tambahkan parameter unik agar browser tidak mengambil cache lama
+    const res = await fetch(scriptURL + '?nocache=' + new Date().getTime());
+    
+    if (!res.ok) throw new Error('Respon server tidak ok');
+    
+    const data = await res.json();
+    container.innerHTML = '';
 
-  data.forEach(emp => {
-    const card = `
-      <div class="bg-white p-4 rounded-xl shadow flex justify-between">
-        <div>
-          <h3 class="font-bold">${emp[1]}</h3>
-          <p class="text-sm text-gray-500">${emp[2]}</p>
-          <span class="text-xs">${emp[3] || 'Belum Absen'}</span>
-        </div>
-        <button onclick="openModal('${emp[1]}')" class="bg-blue-500 text-white px-4 py-1 rounded">
-          Update
-        </button>
+    if (data.length === 0) {
+      container.innerHTML = '<p class="text-center col-span-full">Tidak ada data karyawan.</p>';
+      return;
+    }
+
+    data.forEach(emp => {
+      const card = `
+        <div class="bg-white p-4 rounded-xl shadow flex justify-between items-center border border-gray-100">
+          <div>
+            <h3 class="font-bold text-gray-800">${emp[1]}</h3>
+            <p class="text-xs text-gray-400 uppercase tracking-wider">${emp[2]}</p>
+            <span class="inline-block mt-2 text-[10px] font-bold px-2 py-1 rounded ${getStatusClass(emp[3])}">
+              ${emp[3] || 'BELUM ABSEN'}
+            </span>
+          </div>
+          <button onclick="openModal('${emp[1]}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+            Update
+          </button>
+        </div>`;
+      container.innerHTML += card;
+    });
+  } catch (err) {
+    console.error("Detail Error:", err);
+    container.innerHTML = `
+      <div class="col-span-full text-center p-5 bg-red-50 rounded-xl text-red-600">
+        <p>Gagal memuat data. Pastikan URL Script benar dan sudah di-deploy sebagai 'Anyone'.</p>
+        <button onclick="loadEmployees()" class="mt-2 text-sm underline">Coba Lagi</button>
       </div>`;
-    container.innerHTML += card;
-  });
+  }
+}
+
+function getStatusClass(status) {
+  if (status === 'Hadir') return 'bg-green-100 text-green-700';
+  if (status === 'Sakit' || status === 'Izin') return 'bg-red-100 text-red-700';
+  return 'bg-gray-100 text-gray-500';
 }
 
 function openModal(name) {
