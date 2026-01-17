@@ -1,5 +1,5 @@
 // Ganti dengan URL Web App dari Google Apps Script kamu
-const scriptURL = 'MASUKKAN_URL_GOOGLE_SCRIPT_DISINI'; 
+const scriptURL = 'https://script.google.com/macros/s/AKfycbwYJQ-RD4fbga_1vqklju6xs29-b0g4DUbW1SK8FkNUAA5h5tkM6dKCAZlqzPXJhSU8YA/exec'; 
 
 let selectedUser = "";
 
