@@ -36,23 +36,40 @@ function closeModal() {
 }
 
 async function submitAbsen() {
+  const btn = document.getElementById('btnSubmit'); // Pastikan id ini ada di button kamu
   const status = document.getElementById('statusSelect').value;
   const file = document.getElementById('photoInput').files[0];
   let foto = '';
 
+  if (!file && status === "Hadir") {
+    alert("Harus ambil foto untuk absen Hadir!");
+    return;
+  }
+
+  // Visual Loading
+  btn.disabled = true;
+  btn.innerText = "Mengirim...";
+
   if (file) foto = await toBase64(file);
 
-  await fetch(scriptURL, {
-    method: 'POST',
-    body: JSON.stringify({
-      nama: selectedUser,
-      status: status,
-      foto: foto
-    })
-  });
-
-  closeModal();
-  loadEmployees();
+  try {
+    await fetch(scriptURL, {
+      method: 'POST',
+      body: JSON.stringify({
+        nama: selectedUser,
+        status: status,
+        foto: foto
+      })
+    });
+    alert("Absensi berhasil dicatat!");
+  } catch (err) {
+    alert("Terjadi kesalahan sistem.");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "Kirim";
+    closeModal();
+    loadEmployees();
+  }
 }
 
 const toBase64 = file => new Promise(resolve => {
