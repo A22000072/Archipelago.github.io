@@ -1,58 +1,51 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Rekap Absensi</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-    <nav class="bg-white shadow mb-5 p-4">
-        <div class="max-w-4xl mx-auto flex gap-4">
-            <a href="index.html" class="text-blue-600 hover:underline">🏠 Form Absen</a>
-            <a href="rekap.html" class="text-blue-600 font-bold hover:underline">📊 Rekap Data</a>
-        </div>
-    </nav>
-
-    <div class="max-w-4xl mx-auto p-5">
-        <h1 class="text-2xl font-bold mb-5">Riwayat Kehadiran</h1>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="p-3 border">Nama</th>
-                        <th class="p-3 border">Status</th>
-                        <th class="p-3 border">Waktu</th>
-                    </tr>
-                </thead>
-                <tbody id="rekapTable">
-                    <tr>
-                        <td colspan="3" class="p-3 text-center">Memuat data...</td>
-                    </tr>
+<div class="max-w-6xl mx-auto p-5">
+    <h1 class="text-2xl font-bold mb-6 text-blue-800">Riwayat Absensi Lengkap</h1>
+    
+    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="p-4">Waktu</th>
+                    <th class="p-4">Nama Karyawan</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4">Bukti Foto</th>
+                </tr>
+            </thead>
+            <tbody id="logTableBody" class="divide-y divide-gray-200">
                 </tbody>
-            </table>
-        </div>
+        </table>
     </div>
+</div>
 
-    <script>
-        const scriptURL = 'URL_GOOGLE_SCRIPT_KAMU'; // Masukkan URL yang sama dengan index.html
+<script>
+    // Kamu bisa buat fungsi doGet baru di GS khusus untuk mengambil sheet Log_Absensi
+    async function loadLogs() {
+        const response = await fetch('URL_SCRIPT_KAMU?action=getLogs');
+        const logs = await response.json();
+        const container = document.getElementById('logTableBody');
+        
+        logs.reverse().forEach(log => { // reverse agar data terbaru di atas
+            container.innerHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4">${new Date(log[0]).toLocaleString('id-ID')}</td>
+                    <td class="p-4 font-semibold">${log[1]}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-full text-xs ${getStatusClass(log[2])}">
+                            ${log[2]}
+                        </span>
+                    </td>
+                    <td class="p-4">
+                        <img src="${log[3]}" class="h-10 w-10 object-cover rounded shadow-sm hover:scale-150 transition">
+                    </td>
+                </tr>
+            `;
+        });
+    }
 
-        async function loadRekap() {
-            const res = await fetch(scriptURL);
-            const data = await res.json();
-            const tableBody = document.getElementById('rekapTable');
-            tableBody.innerHTML = '';
-
-            data.forEach(emp => {
-                tableBody.innerHTML += `
-                    <tr>
-                        <td class="p-3 border">${emp[1]}</td>
-                        <td class="p-3 border">${emp[3]}</td>
-                        <td class="p-3 border text-sm text-gray-500">${emp[0] || '-'}</td>
-                    </tr>
-                `;
-            });
-        }
-        loadRekap();
-    </script>
-</body>
-</html>
+    function getStatusClass(status) {
+        if(status === 'Hadir') return 'bg-green-100 text-green-700';
+        if(status === 'Sakit') return 'bg-red-100 text-red-700';
+        return 'bg-gray-100 text-gray-700';
+    }
+    loadLogs();
+</script>
